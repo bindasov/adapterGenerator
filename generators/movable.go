@@ -83,5 +83,5 @@ func Generate(adapterType interface{}) string {
 		}
 		methods = append(methods, method)
 	}
-	return processTemplate("movableAdapter.tmpl", "movable.go", methods)
+	return processTemplate("./movableAdapter.tmpl", "movable.go", methods)
 }
