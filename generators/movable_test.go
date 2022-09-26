@@ -1,12 +1,16 @@
 package generators
 
 import (
+	"fmt"
 	adapters2 "github.com/bindasov/adapterGenerator/adapters"
 	"github.com/bindasov/ioc/ioc"
 	"github.com/bindasov/spaceBattle/adapters"
 	"github.com/bindasov/spaceBattle/commands"
 	"github.com/bindasov/spaceBattle/services/mocks"
 	"github.com/stretchr/testify/require"
+	"log"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -23,7 +27,15 @@ func TestMovableGenerator_Generate(t *testing.T) {
 		{
 			name: "generation success",
 			handler: func(t *testing.T, deps *deps) {
-				expected := "package adapters\n\nimport (\n\t\"github.com/bindasov/ioc/ioc\"\n\t\"github.com/bindasov/spaceBattle/adapters\"\n\t\"github.com/bindasov/spaceBattle/models\"\n)\n\nfunc NewUObject(adapter adapters.MovableAdapter, ioc *ioc.IoC) *UObject {\n\tobj := &UObject{\n\t\tobj: adapter,\n\t\tioc: ioc,\n\t}\n\treturn obj\n}\n\ntype UObject struct {\n\tobj adapters.MovableAdapter\n\tioc *ioc.IoC\n}\n\nfunc (m *UObject) GetPosition() *models.Vector {\n\treturn m.ioc.Resolve(\"IMovable:Position.Get\", m.obj).(*models.Vector)\n}\nfunc (m *UObject) GetVelocity() *models.Vector {\n\treturn m.ioc.Resolve(\"IMovable:Velocity.Get\", m.obj).(*models.Vector)\n}\nfunc (m *UObject) SetPosition(value *models.Vector) {\n\tm.ioc.Resolve(\"IMovable:Position.Set\", m.obj, value)\n}\n"
+				path, err := os.Getwd()
+				if err != nil {
+					log.Println(err)
+				}
+				etalon, err := os.ReadFile(filepath.Join(path, "adapters/movable.etalon"))
+				if err != nil {
+					fmt.Print(err)
+				}
+				expected := string(etalon)
 				result := Generate(reflect.TypeOf((*adapters.MovableAdapter)(nil)).Elem())
 				require.Equal(t, expected, result)
 			},
