@@ -10,6 +10,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 )
@@ -47,10 +48,10 @@ func extractOutput(s string) string {
 	return ""
 }
 
-func processTemplate(fileName string, outputFile string, data []*Method) string {
-	tmpl := template.Must(template.New("").Funcs(sprig.FuncMap()).ParseFiles(fileName))
+func processTemplate(movableTemplate string, data []*Method) string {
+	tmpl := template.Must(template.New("").Funcs(sprig.FuncMap()).Parse(movableTemplate))
 	var processed bytes.Buffer
-	err := tmpl.ExecuteTemplate(&processed, fileName, data)
+	err := tmpl.Execute(&processed, data)
 	if err != nil {
 		log.Fatalf("Unable to parse data into template: %v\n", err)
 	}
@@ -58,12 +59,6 @@ func processTemplate(fileName string, outputFile string, data []*Method) string 
 	if err != nil {
 		log.Fatalf("Could not format processed template: %v\n", err)
 	}
-	outputPath := "./adapters/" + outputFile
-	fmt.Println("Writing file: ", outputPath)
-	f, _ := os.Create(outputPath)
-	w := bufio.NewWriter(f)
-	w.WriteString(string(formatted))
-	w.Flush()
 	return string(formatted)
 }
 
@@ -83,5 +78,20 @@ func Generate(adapterType interface{}) string {
 		}
 		methods = append(methods, method)
 	}
-	return processTemplate("./movableAdapter.tmpl", "movable.go", methods)
+
+	path, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+	movableTemplate, err := os.ReadFile(filepath.Join(path, "movableAdapter.tmpl"))
+	if err != nil {
+		fmt.Print(err)
+	}
+	formatted := processTemplate(string(movableTemplate), methods)
+
+	f, _ := os.Create(filepath.Join(path, "adapters/movable.go"))
+	w := bufio.NewWriter(f)
+	w.WriteString(formatted)
+	w.Flush()
+	return formatted
 }
